@@ -1,4 +1,6 @@
 import {
+  DISCOUNT_ORDER_INTERVAL,
+  DISCOUNT_PERCENT,
   FREE_SHIPPING_THRESHOLD_CENTS,
   PRODUCTS,
   SHIPPING_FEE_CENTS,
@@ -107,3 +109,39 @@ export const serializeOrder = (order: Order) => ({
   discount: toDecimal(order.discountCents),
   total: toDecimal(order.totalCents)
 });
+
+export const generateDiscountCode = () => {
+  const milestone = store.orders.length;
+  if (milestone === 0 || milestone % DISCOUNT_ORDER_INTERVAL !== 0) {
+    const needed = DISCOUNT_ORDER_INTERVAL - (milestone % DISCOUNT_ORDER_INTERVAL);
+    throw new AppError("COUPON_NOT_ELIGIBLE", `A discount code can be generated after every ${DISCOUNT_ORDER_INTERVAL} successful orders. ${needed} more order(s) needed.`);
+  }
+  if (store.generatedMilestones.includes(milestone)) {
+    throw new AppError("COUPON_ALREADY_GENERATED_FOR_MILESTONE", `A discount code has already been generated for order milestone ${milestone}.`);
+  }
+  const coupon: Coupon = {
+    code: `CARTLY-${crypto.randomUUID().slice(0, 6).toUpperCase()}`,
+    discountPercent: DISCOUNT_PERCENT,
+    status: "unused",
+    generatedAfterOrder: milestone,
+    createdAt: new Date().toISOString()
+  };
+  store.coupons.push(coupon);
+  store.generatedMilestones.push(milestone);
+  return coupon;
+};
+
+export const getAdminStats = () => {
+  const totalRevenueCents = store.orders.reduce((sum, order) => sum + order.totalCents, 0);
+  const totalDiscountsGivenCents = store.orders.reduce((sum, order) => sum + order.discountCents, 0);
+  return {
+    totalOrders: store.orders.length,
+    totalItemsPurchased: store.orders.reduce((sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0),
+    totalRevenueCents,
+    totalRevenue: toDecimal(totalRevenueCents),
+    discountCodesGenerated: store.coupons.length,
+    totalDiscountsGivenCents,
+    totalDiscountsGiven: toDecimal(totalDiscountsGivenCents),
+    coupons: store.coupons
+  };
+};
