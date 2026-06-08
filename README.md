@@ -26,6 +26,12 @@ Backend: http://localhost:4000
 
 The example environment file contains the default local frontend and backend URLs.
 
+## Deployment
+- Render uses `render.yaml` to deploy the Express API and verify `/api/health`.
+- Vercel uses `vercel.json` to build the Next.js application from the monorepo root.
+- Set `NEXT_PUBLIC_API_URL` on Vercel to the deployed Render API URL.
+- Set `FRONTEND_ORIGIN` on Render to the deployed Vercel production URL.
+
 ## Test, Build, and Lint
 ```bash
 pnpm test
