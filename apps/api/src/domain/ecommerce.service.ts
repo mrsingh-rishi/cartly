@@ -2,7 +2,9 @@ import {
   FREE_SHIPPING_THRESHOLD_CENTS,
   PRODUCTS,
   SHIPPING_FEE_CENTS,
-  type CartItem
+  type CartItem,
+  type Coupon,
+  type Order
 } from "@cartly/shared";
 import { store, resetStore } from "../store/memory-store.js";
 import { AppError } from "../utils/errors.js";
@@ -64,3 +66,44 @@ const requireCartItem = (productId: string) => {
   return item;
 };
 
+export const validateCoupon = (couponCode: string) => {
+  const coupon = store.coupons.find((item) => item.code === couponCode.trim().toUpperCase());
+  if (!coupon) throw new AppError("INVALID_COUPON", "Invalid coupon code.");
+  if (coupon.status === "used") throw new AppError("COUPON_ALREADY_USED", "This coupon has already been used.");
+  return coupon;
+};
+
+export const checkout = (couponCode?: string) => {
+  if (store.cart.length === 0) throw new AppError("EMPTY_CART", "Cannot checkout with an empty cart.");
+  const coupon = couponCode ? validateCoupon(couponCode) : undefined;
+  const summary = calculateCartSummary();
+  const discountCents = coupon ? Math.round(summary.subtotalCents * coupon.discountPercent / 100) : 0;
+  const order: Order = {
+    id: `ORD-${String(store.orders.length + 1).padStart(4, "0")}`,
+    items: structuredClone(store.cart),
+    subtotalCents: summary.subtotalCents,
+    shippingCents: summary.shippingCents,
+    discountCents,
+    totalCents: summary.subtotalCents + summary.shippingCents - discountCents,
+    couponCode: coupon?.code,
+    createdAt: new Date().toISOString()
+  };
+  store.orders.push(order);
+  if (coupon) markCouponUsed(coupon);
+  store.cart = [];
+  return serializeOrder(order);
+};
+
+const markCouponUsed = (coupon: Coupon) => {
+  coupon.status = "used";
+  coupon.usedAt = new Date().toISOString();
+};
+
+export const serializeOrder = (order: Order) => ({
+  ...order,
+  items: order.items.map((item) => ({ ...item, price: toDecimal(item.priceCents), lineTotalCents: item.priceCents * item.quantity, lineTotal: toDecimal(item.priceCents * item.quantity) })),
+  subtotal: toDecimal(order.subtotalCents),
+  shipping: toDecimal(order.shippingCents),
+  discount: toDecimal(order.discountCents),
+  total: toDecimal(order.totalCents)
+});
