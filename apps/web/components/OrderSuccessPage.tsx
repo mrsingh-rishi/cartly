@@ -1,0 +1,8 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { money } from "../lib/money";
+type Order = { id: string; createdAt: string; items: { quantity: number }[]; couponCode?: string; discountCents: number; totalCents: number };
+export function OrderSuccessPage() { const [order, setOrder] = useState<Order | null>(); useEffect(() => { const value = sessionStorage.getItem("cartly:last-order"); setOrder(value ? JSON.parse(value) : null); }, []); if (order === undefined) return null; if (!order) return <main className="center-state"><h2>No recent order found</h2><p>Place an order to see its confirmation here.</p><Link className="primary-button compact" href="/">Back to Store</Link></main>; const count = order.items.reduce((s, i) => s + i.quantity, 0); return <main className="success-page"><article className="success-card"><div className="check">✓</div><h1>Order Placed!</h1><p>Thanks for your purchase. Your order is confirmed.</p><div className="details"><Row label="Order ID" value={order.id} /><Row label="Date" value={new Date(order.createdAt).toLocaleDateString()} /><Row label="Items" value={`${count} item${count === 1 ? "" : "s"}`} />{order.couponCode && <Row label="Coupon Applied" value={`${order.couponCode} (−${money(order.discountCents)})`} />}<hr /><Row label="Total Paid" value={money(order.totalCents)} /></div>{order.discountCents > 0 && <div className="saved">✓ You saved <b>{money(order.discountCents)}</b> with {order.couponCode}</div>}<Link className="primary-button" href="/">← Back to Store</Link></article></main>; }
+function Row({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><strong>{value}</strong></div>; }
+

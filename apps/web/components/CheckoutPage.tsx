@@ -1,0 +1,18 @@
+"use client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import type { CartItem } from "@cartly/shared";
+import { api } from "../lib/api";
+import { money } from "../lib/money";
+
+type Data = { items: (CartItem & { lineTotalCents: number })[]; summary: { subtotalCents: number; shippingCents: number; totalCents: number } };
+export function CheckoutPage() {
+  const router = useRouter(); const [cart, setCart] = useState<Data | null>(null); const [code, setCode] = useState(""); const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
+  useEffect(() => { api<Data>("/api/cart").then(setCart).catch((e) => setError(e.message)); }, []);
+  const place = async () => { setLoading(true); setError(""); try { const result = await api<{ order: object }>("/api/checkout", { method: "POST", body: JSON.stringify(code.trim() ? { couponCode: code.trim().toUpperCase() } : {}) }); sessionStorage.setItem("cartly:last-order", JSON.stringify(result.order)); window.dispatchEvent(new Event("cart-updated")); router.push("/order-success"); } catch (e) { setError((e as Error).message); setLoading(false); } };
+  if (!cart) return <main className="center-state"><h2>Loading checkout…</h2><p>{error || "Preparing your order."}</p></main>;
+  return <main className="page narrow"><Link className="back" href="/cart">← Back to Cart</Link><h1>Checkout</h1><div className="two-col checkout"><section className="stack"><div className="panel"><h3>Order Items ({cart.items.length})</h3>{cart.items.map((i) => <div className="item-row" key={i.productId}><span><b>{i.name}</b> ×{i.quantity}</span><strong>{money(i.lineTotalCents)}</strong></div>)}</div><div className="panel"><h3>Discount Coupon</h3><div className="coupon-input"><input value={code} onChange={(e) => { setCode(e.target.value); setError(""); }} placeholder="Enter coupon code" /><span>Validated securely at checkout</span></div>{error && <p className="field-error">{error}</p>}</div></section><aside className="summary-card"><h3>Order Total</h3><Row label="Subtotal" value={money(cart.summary.subtotalCents)} /><Row label="Shipping" value={cart.summary.shippingCents ? money(cart.summary.shippingCents) : "Free"} /><hr /><Row label="Total before discount" value={money(cart.summary.totalCents)} bold /><button className="primary-button" disabled={loading || !cart.items.length} onClick={place}>{loading ? "Placing Order…" : "Place Order →"}</button><small className="secure">Secure demo checkout · No payment required</small></aside></div></main>;
+}
+function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) { return <div className={`summary-row ${bold ? "bold" : ""}`}><span>{label}</span><span>{value}</span></div>; }
+
