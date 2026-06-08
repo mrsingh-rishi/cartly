@@ -2,6 +2,7 @@ export const DISCOUNT_ORDER_INTERVAL = 3;
 export const DISCOUNT_PERCENT = 10;
 export const FREE_SHIPPING_THRESHOLD_CENTS = 7500;
 export const SHIPPING_FEE_CENTS = 799;
+export const MAX_ITEM_QUANTITY = 99;
 
 export const CATEGORY_CONFIG = {
   Accessories: { bg: "#fef3c7", stripe: "#fde68a", text: "#92400e" },

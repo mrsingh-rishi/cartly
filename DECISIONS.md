@@ -79,3 +79,12 @@
 - Option B: Keep them out of scope
 **Choice:** No auth or payment gateway.  
 **Why:** It avoids over-engineering and keeps focus on required ecommerce rules.
+
+## Decision: API key guard on admin routes
+**Context:** Admin endpoints (`/api/admin/*`) are operational controls — anyone with the URL can generate discount codes or read revenue data. Full auth is out of scope, but leaving them completely open is a documented security trade-off worth addressing.  
+**Options Considered:**
+- Option A: Leave unprotected (original state)
+- Option B: Full JWT/session auth
+- Option C: Static API key via `x-admin-key` header
+**Choice:** Static API key (`ADMIN_API_KEY` env var, defaulting to `dev-admin-key` in development).  
+**Why:** It closes the obvious open-door without introducing auth infrastructure. The frontend admin dashboard passes the key via `NEXT_PUBLIC_ADMIN_API_KEY`. In production, both env vars should be replaced with a strong random secret.

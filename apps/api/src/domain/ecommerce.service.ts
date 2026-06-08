@@ -2,6 +2,7 @@ import {
   DISCOUNT_ORDER_INTERVAL,
   DISCOUNT_PERCENT,
   FREE_SHIPPING_THRESHOLD_CENTS,
+  MAX_ITEM_QUANTITY,
   PRODUCTS,
   SHIPPING_FEE_CENTS,
   type CartItem,
@@ -20,8 +21,12 @@ export const addItemToCart = (productId: string, quantity: number) => {
   const product = PRODUCTS.find((item) => item.id === productId);
   if (!product) throw new AppError("PRODUCT_NOT_FOUND", "Product not found.", 404);
   const existing = store.cart.find((item) => item.productId === productId);
-  if (existing) existing.quantity += quantity;
-  else store.cart.push({ productId: product.id, name: product.name, desc: product.desc, category: product.category, priceCents: product.priceCents, quantity });
+  if (existing) {
+    const newQty = existing.quantity + quantity;
+    if (newQty > MAX_ITEM_QUANTITY)
+      throw new AppError("QUANTITY_EXCEEDED", `Quantity cannot exceed ${MAX_ITEM_QUANTITY} per item.`);
+    existing.quantity = newQty;
+  } else store.cart.push({ productId: product.id, name: product.name, desc: product.desc, category: product.category, priceCents: product.priceCents, quantity });
   return getCartResponse();
 };
 
@@ -72,7 +77,18 @@ export const validateCoupon = (couponCode: string) => {
   const coupon = store.coupons.find((item) => item.code === couponCode.trim().toUpperCase());
   if (!coupon) throw new AppError("INVALID_COUPON", "Invalid coupon code.");
   if (coupon.status === "used") throw new AppError("COUPON_ALREADY_USED", "This coupon has already been used.");
+  // Mark immediately — check-and-mark in one step closes the TOCTOU window
+  markCouponUsed(coupon);
   return coupon;
+};
+
+export const previewCoupon = (couponCode: string) => {
+  const coupon = store.coupons.find((item) => item.code === couponCode.trim().toUpperCase());
+  if (!coupon) throw new AppError("INVALID_COUPON", "Invalid coupon code.");
+  if (coupon.status === "used") throw new AppError("COUPON_ALREADY_USED", "This coupon has already been used.");
+  const { subtotalCents } = calculateCartSummary();
+  const estimatedDiscountCents = Math.round(subtotalCents * coupon.discountPercent / 100);
+  return { discountPercent: coupon.discountPercent, estimatedDiscountCents };
 };
 
 export const checkout = (couponCode?: string) => {
@@ -91,7 +107,6 @@ export const checkout = (couponCode?: string) => {
     createdAt: new Date().toISOString()
   };
   store.orders.push(order);
-  if (coupon) markCouponUsed(coupon);
   store.cart = [];
   return serializeOrder(order);
 };

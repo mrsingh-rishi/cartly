@@ -11,3 +11,8 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return body;
 }
 
+export function adminApi<T>(path: string, init?: RequestInit): Promise<T> {
+  const key = process.env.NEXT_PUBLIC_ADMIN_API_KEY ?? "dev-admin-key";
+  return api<T>(path, { ...init, headers: { "x-admin-key": key, ...init?.headers } });
+}
+
