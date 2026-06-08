@@ -14,6 +14,7 @@ Turborepo, pnpm workspaces, Next.js App Router, React, Node.js, Express, TypeScr
 ## Setup
 ```bash
 pnpm install
+cp .env.example .env
 ```
 
 ## Run Development
@@ -23,7 +24,7 @@ pnpm dev
 Frontend: http://localhost:3000  
 Backend: http://localhost:4000
 
-Set `NEXT_PUBLIC_API_URL=http://localhost:4000`, `PORT=4000`, and `FRONTEND_ORIGIN=http://localhost:3000` when overriding defaults.
+The example environment file contains the default local frontend and backend URLs.
 
 ## Test, Build, and Lint
 ```bash
@@ -61,4 +62,3 @@ Every third successful order unlocks one manual admin coupon generation. A miles
 - The app has one global cart because no user/session system was required.
 - Authentication and payment processing are intentionally out of scope.
 - The reset endpoint is available only outside production.
-
