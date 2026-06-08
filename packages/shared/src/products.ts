@@ -8,4 +8,3 @@ export const PRODUCTS: Product[] = [
   { id: "5", name: "Soy Wax Candle Set", desc: "Set of 3 hand-poured soy candles, 40hr burn time", priceCents: 5500, category: "Home" },
   { id: "6", name: "Stainless Water Bottle", desc: "32oz double-walled insulation, 24h cold / 12h hot", priceCents: 3800, category: "Lifestyle" }
 ];
-

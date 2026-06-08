@@ -6,7 +6,7 @@
     "build": "next build",
     "start": "next start",
     "test": "echo 'No frontend tests configured'",
-    "lint": "next lint"
+    "lint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@cartly/shared": "workspace:*",
@@ -21,4 +21,3 @@
     "typescript": "^5.8.3"
   }
 }
-
