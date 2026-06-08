@@ -10,7 +10,7 @@ type CartData = { items: (CartItem & { lineTotalCents: number })[]; summary: { i
 export function CartPage() {
   const [cart, setCart] = useState<CartData | null>(null); const [error, setError] = useState("");
   const load = () => api<CartData>("/api/cart").then(setCart).catch((e) => setError(e.message));
-  useEffect(load, []);
+  useEffect(() => { void load(); }, []);
   const mutate = async (path: string, method: string, body?: object) => { const result = await api<{ cart: CartData }>(path, { method, body: body ? JSON.stringify(body) : undefined }); setCart(result.cart); window.dispatchEvent(new Event("cart-updated")); };
   if (error) return <State title="Could not load cart" text={error} />;
   if (!cart) return <State title="Loading cart…" text="Fetching your selected goods." />;
@@ -20,4 +20,3 @@ export function CartPage() {
 function Summary({ cart }: { cart: CartData }) { return <aside className="summary-card"><h3>Order Summary</h3><Row label={`Subtotal (${cart.summary.itemCount} items)`} value={money(cart.summary.subtotalCents)} /><Row label="Shipping" value={cart.summary.shippingCents ? money(cart.summary.shippingCents) : "Free"} green={!cart.summary.shippingCents} />{cart.summary.shippingCents > 0 && <p className="shipping-note">Add <b>{money(7500 - cart.summary.subtotalCents)}</b> more for free shipping</p>}<hr /><Row label="Total" value={money(cart.summary.totalCents)} bold /><Link className="primary-button" href="/checkout">Proceed to Checkout →</Link><Link className="secondary-button" href="/">Continue Shopping</Link></aside>; }
 function Row({ label, value, bold, green }: { label: string; value: string; bold?: boolean; green?: boolean }) { return <div className={`summary-row ${bold ? "bold" : ""} ${green ? "green" : ""}`}><span>{label}</span><span>{value}</span></div>; }
 function State({ title, text }: { title: string; text: string }) { return <main className="center-state"><div className="state-icon">🛒</div><h2>{title}</h2><p>{text}</p><Link className="primary-button compact" href="/">Browse Products</Link></main>; }
-

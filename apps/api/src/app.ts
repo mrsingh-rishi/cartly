@@ -10,7 +10,11 @@ import { errorHandler, notFoundHandler } from "./utils/errors.js";
 
 export const createApp = () => {
   const app = express();
-  app.use(cors({ origin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000" }));
+  const configuredOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:3000";
+  const allowedOrigins = process.env.NODE_ENV === "production"
+    ? [configuredOrigin]
+    : [configuredOrigin, "http://localhost:3001"];
+  app.use(cors({ origin: allowedOrigins }));
   app.use(express.json());
   app.use("/api/health", healthRouter);
   app.use("/api/products", productsRouter);
